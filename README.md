@@ -1,3 +1,4 @@
+ONGOING:Expect to finish before September 1st
 CS231n, Winter 2016, assignment implementation and lecture notes with mind map & Checklist of Neural Network
 
 Acknowledgement
