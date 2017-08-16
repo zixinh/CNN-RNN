@@ -315,7 +315,7 @@ class FullyConnectedNet(object):
         if self.use_batchnorm:
             batch_cache = cache.pop()
             dscores, grads['gamma' + str(cur_layer)], grads['beta' + 
-                                                            str(cur_layer)] = batchnorm_backward_alt(dscores, batch_cache)
+                                                            str(cur_layer)] = batchnorm_backward(dscores, batch_cache)
         
         fc_cache = cache.pop()
         dscores, grads['W' + str(cur_layer)], grads['b' + str(cur_layer)] = affine_backward(dscores, fc_cache)
