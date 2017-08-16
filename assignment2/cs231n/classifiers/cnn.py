@@ -16,8 +16,8 @@ class ThreeLayerConvNet(object):
   channels.
   """
   
-  def __init__(self, input_dim=(3, 32, 32), num_filters=32, filter_size=7,
-               hidden_dim=100, num_classes=10, weight_scale=1e-3, reg=0.0,
+  def __init__(self, input_dim=(3, 32, 32), num_filters=[32], filter_size=[7],
+               hidden_dim=[100], num_classes=10, weight_scale=1e-3, reg=0.0,
                dtype=np.float32):
     """
     Initialize a new network.
@@ -47,15 +47,36 @@ class ThreeLayerConvNet(object):
     # hidden affine layer, and keys 'W3' and 'b3' for the weights and biases   #
     # of the output affine layer.                                              #
     ############################################################################
-    self.params['W1'] = weight_scale * np.random.randn(num_filters, input_dim[0], filter_size, filter_size)
-    self.params['b1'] = weight_scale * np.zeros((num_filters,))
+    num_convlayer = len(num_filters)
+    num_fc = len(hidden_dim)
+    num_filters.insert(0,input_dim[0])
+    fc_input_size = input_dim[0] * input_dim[2] * input_dim[1]
     
-    input_h1 = input_dim[1] * input_dim[2] * num_filters / 4
-    self.params['W2'] = weight_scale * np.random.randn(input_h1, hidden_dim)
-    self.params['b2'] = weight_scale * np.zeros((hidden_dim,))
+    for i in range(1,num_convlayer+1):
+        self.params['W' + str(i)] = weight_scale * np.random.randn(num_filters[i], 
+                                                                   num_filters[i-1], filter_size[i-1], filter_size[i-1])
+        self.params['b' + str(i)] = np.zeros((num_filters[i],))
+        fc_input_size = fc_input_size / num_filters[i-1] * num_filters[i] / 4
     
-    self.params['W3'] = weight_scale * np.random.randn(hidden_dim, num_classes)
-    self.params['b3'] = weight_scale * np.zeros((num_classes,))
+    hidden_dim.insert(0,fc_input_size)
+    for i in range(num_fc):
+        num_param = num_convlayer + 1 + i
+        self.params['W' + str(num_param)] = weight_scale * np.random.randn(hidden_dim[i], hidden_dim[i+1])
+        self.params['b' + str(num_param)] = np.zeros((hidden_dim[i + 1]),)
+        
+    self.params['W' + str(num_convlayer + num_fc + 1)] = weight_scale * np.random.randn(hidden_dim[-1], num_classes)
+    self.params['b' + str(num_convlayer + num_fc + 1)] = np.zeros((num_classes,))
+    
+    
+    #self.params['W1'] = weight_scale * np.random.randn(num_filters, input_dim[0], filter_size, filter_size)
+    #self.params['b1'] = weight_scale * np.zeros((num_filters,))
+    
+    #input_h1 = input_dim[1] * input_dim[2] * num_filters / 4
+    #self.params['W2'] = weight_scale * np.random.randn(input_h1, hidden_dim)
+    #self.params['b2'] = weight_scale * np.zeros((hidden_dim,))
+    
+    #self.params['W3'] = weight_scale * np.random.randn(hidden_dim, num_classes)
+    #self.params['b3'] = weight_scale * np.zeros((num_classes,))
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
