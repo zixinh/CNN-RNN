@@ -157,6 +157,7 @@ def batchnorm_forward(x, gamma, beta, bn_param):
 
   N, D = x.shape
   running_mean = bn_param.get('running_mean', np.zeros(D, dtype=x.dtype))
+  #print 'running mean:', running_mean.shape
   running_var = bn_param.get('running_var', np.zeros(D, dtype=x.dtype))
 
   out, cache = None, None
@@ -177,12 +178,12 @@ def batchnorm_forward(x, gamma, beta, bn_param):
     sample_mean = np.mean(x, axis=0)
     sample_variance = np.var(x, axis=0)
     x_norm = (x - sample_mean) / np.sqrt(sample_variance + eps)
-    #print np.mean(normalized_x, axis=0), np.std(normalized_x, axis=0)
      
     out = x_norm * gamma + beta
 
     cache = (x, x_norm, sample_mean, sample_variance, gamma, eps)
     
+    #print running_mean.shape, sample_mean.shape
     running_mean = momentum * running_mean + (1 - momentum) * sample_mean
     running_var = momentum * running_var + (1 - momentum) * sample_variance
     #############################################################################
@@ -608,6 +609,7 @@ def spatial_batchnorm_forward(x, gamma, beta, bn_param):
   #############################################################################
   N,C,H,W = x.shape
   x = x.swapaxes(0,1).reshape(C, -1)
+  #print x.shape
   out,cache = batchnorm_forward(x.T, gamma, beta, bn_param)
   out = out.T.reshape(C,N,H,W).swapaxes(0,1)
   #############################################################################

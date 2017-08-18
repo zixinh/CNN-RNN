@@ -310,8 +310,6 @@ class FullyConnectedNet(object):
         dscores = relu_backward(dscores, relu_cache)
         cur_layer = self.num_layers - i - 1
         
-     
-        
         if self.use_batchnorm:
             batch_cache = cache.pop()
             dscores, grads['gamma' + str(cur_layer)], grads['beta' + 
