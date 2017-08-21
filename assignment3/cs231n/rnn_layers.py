@@ -179,7 +179,14 @@ def word_embedding_forward(x, W):
   #                                                                            #
   # HINT: This should be very simple.                                          #
   ##############################################################################
-  pass
+  N, T = x.shape
+  V, D = W.shape
+  out = np.zeros((N,T,D))
+  out = W[x]
+  #for n in range(N):
+        #for t in range(T):
+            #out[n,t,:] = W[x[n,t],:]
+  cache = (x, W)
   ##############################################################################
   #                               END OF YOUR CODE                             #
   ##############################################################################
@@ -207,7 +214,13 @@ def word_embedding_backward(dout, cache):
   #                                                                            #
   # HINT: Look up the function np.add.at                                       #
   ##############################################################################
-  pass
+  x, W = cache
+  dW = np.zeros(W.shape)
+  np.add.at(dW, x, dout)
+  # dW[x] gives a (N,T,D), intuition is that the influence from W to out is equal
+  # to vectors that certain vocabulary covert integer to. e.g. assume W has 3 vocabulary
+  # and there are five integers corresponds to vocabulary A, then dW's A row should have
+  # 5 accumulated integers 
   ##############################################################################
   #                               END OF YOUR CODE                             #
   ##############################################################################
