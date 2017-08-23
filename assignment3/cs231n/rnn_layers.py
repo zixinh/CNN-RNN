@@ -377,9 +377,9 @@ def temporal_affine_forward(x, w, b):
   dimension M.
 
   Inputs:
-  - x: Input data of shape (N, T, D)
-  - w: Weights of shape (D, M)
-  - b: Biases of shape (M,)
+  - x: Input data of shape (N, T, D) should be (N,T,H)
+  - w: Weights of shape (D, M) should be (H,V)
+  - b: Biases of shape (M,) should be (V,)
   
   Returns a tuple of:
   - out: Output data of shape (N, T, M)
@@ -462,4 +462,55 @@ def temporal_softmax_loss(x, y, mask, verbose=False):
   dx = dx_flat.reshape(N, T, V)
   
   return loss, dx
+
+def affine_forward(x, w, b):
+  """
+  Computes the forward pass for an affine (fully-connected) layer.
+
+  The input x has shape (N, d_1, ..., d_k) and contains a minibatch of N
+  examples, where each example x[i] has shape (d_1, ..., d_k). We will
+  reshape each input into a vector of dimension D = d_1 * ... * d_k, and
+  then transform it to an output vector of dimension M.
+
+  Inputs:
+  - x: A numpy array containing input data, of shape (N, d_1, ..., d_k)
+  - w: A numpy array of weights, of shape (D, M)
+  - b: A numpy array of biases, of shape (M,)
+  
+  Returns a tuple of:
+  - out: output, of shape (N, M)
+  - cache: (x, w, b)
+  """
+  out = None
+  mask = np.reshape(x,(x.shape[0], np.prod(x.shape[1:])))
+  out = mask.dot(w) + b
+  cache = (x, w, b)
+  return out, cache
+
+
+def affine_backward(dout, cache):
+  """
+  Computes the backward pass for an affine layer.
+
+  Inputs:
+  - dout: Upstream derivative, of shape (N, M)
+  - cache: Tuple of:
+    - x: Input data, of shape (N, d_1, ... d_k)
+    - w: Weights, of shape (D, M)
+
+  Returns a tuple of:
+  - dx: Gradient with respect to x, of shape (N, d1, ..., d_k)
+  - dw: Gradient with respect to w, of shape (D, M)
+  - db: Gradient with respect to b, of shape (M,)
+  """
+  x, w, b = cache
+  dx, dw, db = None, None, None
+  # db
+  db = np.sum(dout, axis=0)
+  #dx
+  dx = dout.dot(w.T).reshape(x.shape)
+  #dw
+  temp1 = np.reshape(x, (x.shape[0], np.prod(x.shape[1:])))
+  dw = temp1.T.dot(dout).reshape(w.shape)
+  return dx, dw, db
 
