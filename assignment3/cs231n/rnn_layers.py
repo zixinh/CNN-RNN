@@ -433,7 +433,7 @@ def lstm_backward(dh, cache):
         cur_dh = dh[:,i,:] + dh0 
         # dh[:,i,:] += dh0 # need original dh in gradient check, attempt to change dh inside a function will cause 
         # original dh changes, that is, even inside a function, same parameter refers to the same memory address
-        dx[:,i,:], dh0, dc, dWx_step, dWh_step, db_step = lstm_step_backward(dh[:,i,:], dc, cache.pop())
+        dx[:,i,:], dh0, dc, dWx_step, dWh_step, db_step = lstm_step_backward(cur_dh, dc, cache.pop())
         dWx += dWx_step
         dWh += dWh_step
         db += db_step
