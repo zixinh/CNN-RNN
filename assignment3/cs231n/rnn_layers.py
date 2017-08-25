@@ -266,7 +266,17 @@ def lstm_step_forward(x, prev_h, prev_c, Wx, Wh, b):
   # TODO: Implement the forward pass for a single timestep of an LSTM.        #
   # You may want to use the numerically stable sigmoid implementation above.  #
   #############################################################################
-  pass
+  N,H = prev_h.shape
+  all_val = x.dot(Wx) + prev_h.dot(Wh) + b
+  it = sigmoid(all_val[:,:H])
+  ft = sigmoid(all_val[:,H:2*H])
+  ot = sigmoid(all_val[:,2*H:3*H])
+  gt = np.tanh(all_val[:,3*H:4*H])
+
+  next_c = ft * prev_c + it * gt
+  next_h = ot * np.tanh(next_c)
+
+  cache = (x, prev_h, prev_c, Wx, Wh, b, next_c)
   ##############################################################################
   #                               END OF YOUR CODE                             #
   ##############################################################################
@@ -298,7 +308,45 @@ def lstm_step_backward(dnext_h, dnext_c, cache):
   # HINT: For sigmoid and tanh you can compute local derivatives in terms of  #
   # the output value from the nonlinearity.                                   #
   #############################################################################
-  pass
+  x, prev_h, prev_c, Wx, Wh, b, next_c = cache
+  N,H = prev_h.shape
+  all_val = x.dot(Wx) + prev_h.dot(Wh) + b
+  it = sigmoid(all_val[:,:H])
+  ft = sigmoid(all_val[:,H:2*H])
+  ot = sigmoid(all_val[:,2*H:3*H])
+  gt = np.tanh(all_val[:,3*H:4*H])
+
+  # multiply gate 1
+  dtanhct = ot * dnext_h
+  dsigot = np.tanh(next_c) * dnext_h
+  
+  # tanh gate
+  dct = (1 - np.tanh(next_c)**2) * dtanhct
+  dct += dnext_c  # since next_c is influenced by next timestep as well as current timestep
+    
+  # multiply gate 2
+  dsigft = prev_c * dct
+  dprev_c = ft * dct
+  
+  # Multiply gate 3
+  dtanhgt = it * dct
+  dsigit = gt * dct
+  
+  # sigmoid and tanh
+  dit = it * (1 - it) * dsigit
+  dft = ft * (1 - ft) * dsigft
+  dot = ot * (1 - ot) * dsigot
+  dgt = (1- gt**2) * dtanhgt
+    
+  # Plus/Combine Gate
+  dall = np.hstack((dit,dft,dot,dgt))
+    
+  # dot Gate
+  db = np.sum(dall, axis=0)
+  dWx = x.T.dot(dall)
+  dWh = prev_h.T.dot(dall)
+  dprev_h = dall.dot(Wh.T)
+  dx = dall.dot(Wx.T)
   ##############################################################################
   #                               END OF YOUR CODE                             #
   ##############################################################################
@@ -333,7 +381,17 @@ def lstm_forward(x, h0, Wx, Wh, b):
   # TODO: Implement the forward pass for an LSTM over an entire timeseries.   #
   # You should use the lstm_step_forward function that you just defined.      #
   #############################################################################
-  pass
+  N,T,D = x.shape
+  H = h0.shape[1]
+  prev_h = h0
+  c = np.zeros((N,H))
+  h = np.zeros((N,T,H))
+  cache = []
+
+  for i in range(T):
+        h[:,i,:], c, cache_step = lstm_step_forward(x[:,i,:], prev_h, c, Wx, Wh, b)
+        prev_h = h[:,i,:]
+        cache.append(cache_step)
   ##############################################################################
   #                               END OF YOUR CODE                             #
   ##############################################################################
@@ -361,11 +419,28 @@ def lstm_backward(dh, cache):
   # TODO: Implement the backward pass for an LSTM over an entire timeseries.  #
   # You should use the lstm_step_backward function that you just defined.     #
   #############################################################################
-  pass
+  N,T,H = dh.shape
+  D = cache[0][0].shape[1]
+  dx = np.zeros((N,T,D))
+  dh0 = np.zeros((N,H))
+  dWx = np.zeros((D, 4*H))
+  dWh = np.zeros((H, 4*H))
+  db = np.zeros((4*H,))
+  dc = np.zeros((N,H))
+  
+  for t in range(T):
+        i = T - t - 1
+        cur_dh = dh[:,i,:] + dh0 
+        # dh[:,i,:] += dh0 # need original dh in gradient check, attempt to change dh inside a function will cause 
+        # original dh changes, that is, even inside a function, same parameter refers to the same memory address
+        dx[:,i,:], dh0, dc, dWx_step, dWh_step, db_step = lstm_step_backward(dh[:,i,:], dc, cache.pop())
+        dWx += dWx_step
+        dWh += dWh_step
+        db += db_step
   ##############################################################################
   #                               END OF YOUR CODE                             #
   ##############################################################################
-  
+
   return dx, dh0, dWx, dWh, db
 
 
@@ -514,3 +589,4 @@ def affine_backward(dout, cache):
   dw = temp1.T.dot(dout).reshape(w.shape)
   return dx, dw, db
 
+    

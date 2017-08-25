@@ -213,7 +213,6 @@ class CaptioningRNN(object):
     D = start.shape[2]
     H = h0.shape[1]
     h_next, _ = rnn_step_forward(start.reshape((N,D)), h0, Wx, Wh, b)
-    #words, _ = temporal_affine_forward(h_next.reshape(), W_vocab, b_vocab)
     words, _ = affine_forward(h_next, W_vocab, b_vocab)
     V = words.shape[1]
     captions[:,0] = np.argmax(words.reshape((N, V)), axis=1)
